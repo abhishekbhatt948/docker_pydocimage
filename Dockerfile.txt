@@ -1,0 +1,32 @@
+# Start with an official Jenkins base image that includes JDK
+FROM jenkins/agent:latest
+
+# Install Python3, pip3, and Docker
+USER root
+
+# Update packages and install required dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    && curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg | apt-key add - \
+    && add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
+    $(lsb_release -cs) stable" \
+    && apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# Add Python packages if needed
+RUN pip3 install --upgrade pip setuptools
+
+# Ensure Jenkins can run Docker commands (optional if Jenkins is in a container)
+RUN usermod -aG docker jenkins
+
+# Clean up APT when done
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set user back to Jenkins
+USER jenkins
